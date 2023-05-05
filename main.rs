@@ -137,9 +137,11 @@ fn main() {
     */
     //shared_words(lyrics1.to_string(), lyrics2.to_string());
     let now = time::Instant::now();
-    if let Err(e) = read_csv("Songs.csv") {
+    /*if let Err(e) = read_csv("Songs.csv") {
         eprintln!("{}",e);
-    }
+    }*/
+    let a = read_csv("Songs.csv").unwrap();
+    println!("{:?}",a.len());
     let elapsed_time = now.elapsed();
     println!("Running slow_function() took {} seconds.", elapsed_time.as_secs());
     println!("test");
