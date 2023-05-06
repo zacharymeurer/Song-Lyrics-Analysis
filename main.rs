@@ -1,4 +1,5 @@
 mod file_reading;
+mod graph;
 //use std::error::Error;
 use std::time;
 //use rand::{seq::IteratorRandom, thread_rng};
@@ -141,7 +142,9 @@ fn main() {
         eprintln!("{}",e);
     }*/
     let a = read_csv("Songs.csv").unwrap();
-    println!("{:?}",a.len());
+    //let a = read_csv("Songs_test.csv").unwrap();
+    println!("{:?}",a.len()); // max edges = n(n-1)/2
+    //println!("{:?}",a);
     let elapsed_time = now.elapsed();
     println!("Running slow_function() took {} seconds.", elapsed_time.as_secs());
     println!("test");

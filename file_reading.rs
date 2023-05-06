@@ -3,7 +3,8 @@ pub mod file_reading {
     use std::collections::HashSet;
     use std::error::Error;
     use serde::Deserialize;
-    
+    use crate::graph::graph::Edge;
+
     #[derive(Debug, Deserialize)]
     #[derive(Clone)]
     #[allow(non_snake_case)]
@@ -13,27 +14,31 @@ pub mod file_reading {
         Lyrics: String,
     }
 
+    //type Vertex = String;
+    //type SharedLyrics = Vec<String>;
+    //type Distance = usize;
+    //type Edge = (Vertex, Vertex, SharedLyrics, Distance);
+
     pub fn read_csv(path: &str) -> Result<Vec<Edge>, Box<dyn Error>> {//Result<(), Box<dyn Error>> {
         let mut reader = csv::Reader::from_path(path)?;
-        let mut edges: Vec<Edge> = Vec::new();
+        let mut list_of_edges: Vec<Edge> = Vec::new();
         let mut records: Vec<Song> = Vec::new();
         for result in reader.deserialize() {
             let current_record: Song = result?;
             for record in records.iter(){
                 //check whether record (current Song) shares any lyrics with songs already in lyrics list
-                edges.push(shared_words(&current_record, record));
+                let edge: Edge = shared_words(&current_record, record);
+                if edge.3 > 0 {
+                    list_of_edges.push(edge);
+                }
+                //edges.push(shared_words(&current_record, record));
             }
             
             records.push(current_record);
         }
-        return Ok(edges)
+        println!("{:?}",records.len());
+        return Ok(list_of_edges)
     }
-
-
-    type Vertex = String;
-    type SharedLyrics = Vec<String>;
-    type Distance = usize;
-    type Edge = (Vertex, Vertex, SharedLyrics, Distance);
 
     fn clean_lyrics(lyrics: &String) -> HashSet<String> {
         let temp = lyrics.replace(|c: char| !c.is_alphanumeric() & !(c==' '), "");
