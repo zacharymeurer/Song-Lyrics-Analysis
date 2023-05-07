@@ -142,11 +142,12 @@ fn main() {
     /*if let Err(e) = read_csv("Songs.csv") {
         eprintln!("{}",e);
     }*/
-    let a = read_csv_to_edges("Songs.csv").unwrap();
-    //let a = read_csv_to_edges("Songs_test.csv").unwrap();
+    //let a = read_csv_to_edges("Songs.csv").unwrap();
+    let a = read_csv_to_edges("Songs_test.csv").unwrap();
     println!("{:?}",a.len()); // max edges = n(n-1)/2
-    //println!("{:?}\n",a);
-    println!("{:?}\n",Graph::create_undirected(a));
+    let g = Graph::create_undirected(a);
+    println!("{:?}\n",g);
+    println!("{:?}\n",g.highest_degree_node());
     //println!("{:?}",a);
     let elapsed_time = now.elapsed();
     println!("Running slow_function() took {} seconds.", elapsed_time.as_secs());
@@ -155,7 +156,7 @@ fn main() {
     println!("test2");
     let v = vec![1,2,31,4,5,10];
     let max = v.iter().max();
-    println!("{:?}",max)
+    println!("{:?}",max);
     /*
     struct Test {
         x: u32,
@@ -178,4 +179,7 @@ fn main() {
     let sample = v.iter().choose_multiple(&mut rng, 2);
 
     println!("{:?}", sample);*/
+    use std::cmp;
+    println!("{:?}",cmp::max_by(2,5, |x, y| x.cmp(&y)));
+    println!("{:?}",2.cmp(&5));
 }
