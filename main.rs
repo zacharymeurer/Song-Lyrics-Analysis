@@ -1,158 +1,78 @@
 mod file_reading;
-//use std::error::Error;
-use std::time;
-//use rand::{seq::IteratorRandom, thread_rng};
+mod graph;
 fn main() {
-    use file_reading::file_reading::read_csv;
-    //use file_reading::file_reading::shared_words;
-    /*let lyrics1 = "Vintage tee, brand new phone
-    High heels on cobblestones
-    When you are young, they assume you know nothing
-    Sequin smile, black lipstick
-    Sensual politics
-    When you are young, they assume you know nothing
-    
-    But I knew you
-    Dancin' in your Levi's
-    Drunk under a streetlight, I
-    I knew you
-    Hand under my sweatshirt
-    Baby, kiss it better, I
-    
-    And when I felt like I was an old cardigan
-    Under someone's bed
-    You put me on and said I was your favorite
-    
-    A friend to all is a friend to none
-    Chase two girls, lose the one
-    When you are young, they assume you know nothing
-    But I knew you
-    Playing hide-and-seek and
-    Giving me your weekends, I
-    I knew you
-    Your heartbeat on the High Line
-    Once in twenty lifetimes, I
-    
-    And when I felt like I was an old cardigan
-    Under someone's bed
-    You put me on and said I was your favorite
-    
-    To kiss in cars and downtown bars
-    Was all we needed
-    You drew stars around my scars
-    But now I'm bleedin'
-    
-    'Cause I knew you
-    Steppin' on the last train
-    Marked me like a bloodstain, I
-    I knew you
-    Tried to change the ending
-    Peter losing Wendy, I
-    I knew you
-    Leavin' like a father
-    Running like water, I
-    And when you are young, they assume you know nothing
-    But I knew you'd linger like a tattoo kiss
-    I knew you'd haunt all of my what-ifs
-    The smell of smoke would hang around this long
-    'Cause I knew everything when I was young
-    I knew I'd curse you for the longest time
-    Chasin' shadows in the grocery line
-    I knew you'd miss me once the thrill expired
-    And you'd be standin' in my front porch light
-    And I knew you'd come back to me
-    You'd come back to me
-    And you'd come back to me
-    And you'd come back
-    
-    And when I felt like I was an old cardigan
-    Under someone's bed
-    You put me on and said I was your favorite142EmbedShare URLCopyEmbedCopy";
-
-    let lyrics2 = "I can see you standing, honey
-    With his arms around your body
-    Laughin', but the joke's not funny at all
-    And it took you five whole minutes
-    To pack us up and leave me with it
-    Holdin' all this love out here in the hall
-    
-    I think I've seen this film before
-    And I didn't like the ending
-    You're not my homeland anymore
-    So what am I defending now?
-    You were my town, now I'm in exile, seein' you out
-    I think I've seen this film before
-    
-    Ooh, ooh, ooh
-    
-    I can see you starin', honey
-    Like he's just your understudy
-    Like you'd get your knuckles bloody for me
-    Second, third, and hundredth chances
-    Balancin' on breaking branches
-    Those eyes add insult to injury
-    I think I've seen this film before
-    And I didn't like the ending
-    I'm not your problem anymore
-    So who am I offending now?
-    You were my crown, now I'm in exile, seein' you out
-    I think I've seen this film before
-    So I'm leaving out the side door
-    So step right out, there is no amount
-    Of crying I can do for you
-    All this time
-    We always walked a very thin line
-    You didn't even hear me out (You didn't even hear me out)
-    You never gave a warning sign (I gave so many signs)
-    All this time
-    I never learned to read your mind (Never learned to read my mind)
-    I couldn't turn things around (You never turned things around)
-    'Cause you never gave a warning sign (I gave so many signs)
-    So many signs, so many signs
-    You didn't even see the signs
-    
-    I think I've seen this film before
-    And I didn't like the ending
-    You're not my homeland anymore
-    So what am I defending now?
-    You were my town, now I'm in exile, seein' you out
-    I think I've seen this film before
-    So I'm leavin' out the side door
-    So step right out, there is no amount
-    Of crying I can do for you
-    All this time
-    We always walked a very thin line
-    You didn't even hear me out (Didn't even hear me out)
-    You never gave a warning sign (I gave so many signs)
-    All this time
-    I never learned to read your mind (Never learned to read my mind)
-    I couldn't turn things around (You never turned things around)
-    'Cause you never gave a warning sign (I gave so many signs)
-    You never gave a warning sign (All this time)
-    (So many times) I never learned to read your mind
-    (So many signs) I couldn't turn things around (I couldn't turn things around)
-    'Cause you never gave a warning sign (You never gave a warning sign)
-    You never gave a warning sign
-    Ah, ah93EmbedShare URLCopyEmbedCopy";
-    */
-    //shared_words(lyrics1.to_string(), lyrics2.to_string());
+    use std::time;
+    use file_reading::file_reading::read_bossa_csv_to_edges;
+    use file_reading::file_reading::read_songs_csv_to_edges;
+    use graph::graph::Graph;
     let now = time::Instant::now();
-    if let Err(e) = read_csv("Songs.csv") {
-        eprintln!("{}",e);
-    }
-    let elapsed_time = now.elapsed();
-    println!("Running slow_function() took {} seconds.", elapsed_time.as_secs());
-    println!("test");
-    //let p = read_csv("Songs.csv");
-    println!("test2");
-    /*println!("Hello, world!");
-    //use readCSV::level_1::tester;
-    //tester();
-    use file_reading::file_reading::read_csv;
-    let lyrics = read_csv("Songs.csv");
-    let mut rng = thread_rng();
-    let v = vec![vec![1,2,3,4], vec![2,3,4,5], vec![3,4,5,6], vec![4,5,6,7], vec![5,6,7,8]];
-    let sample = v.iter().choose_multiple(&mut rng, 2);
+    let songs = read_songs_csv_to_edges("Songs.csv").unwrap();
+    let bossa = read_bossa_csv_to_edges("bossa_nova_songs_dataset_sample.csv").unwrap();
+    let datasets = vec![songs,bossa];
+    for initial_edges in datasets{
+        let mut g = Graph::create_undirected(initial_edges);
+        println!("The number of shared lyric connections between songs is {}, with the max possible number being {}\n",
+                g.outedges.len(),((g.n*(g.n-1)) as f64)/2.0); // max edges = n(n-1)/2
 
-    println!("{:?}", sample);*/
+        let most_shared_edge = g.min_distance();
+        println!("The songs {:?} and {:?} have the most ({:?}) lyrics in common: {:?}\n",
+                most_shared_edge.0.0,most_shared_edge.1.0,most_shared_edge.2.len(),most_shared_edge.2);
+
+        let most_connected_song = g.highest_degree_node();
+        println!("The song that shares lyrics with the most other songs is {} with connections to {} other songs\n",
+                most_connected_song.0,most_connected_song.1);
+
+        let closeness = g.closeness_centrality();
+        println!("The normalized closeness centrality value of the graph is {}\n",
+                closeness);
+
+        let elapsed_time = now.elapsed();
+        println!("Running slow_function() took {} seconds.\n\n\n\n", elapsed_time.as_secs());
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_shared_words() {
+        use crate::file_reading::file_reading::Song;
+        use crate::file_reading::file_reading::shared_words;
+        let s1 = Song{Artist: "Nicolas Minajj".to_string(), Title: "Superbutt".to_string(), Lyrics: "Tree elephant 1 2 56".to_string()};
+        let s2 = Song{Artist: "Nicolas Minajj".to_string(), Title: "Superbs".to_string(), Lyrics: "Tree 5, shock through every bone".to_string()};
+    
+        let truth = (("Nicolas Minajj - Superbutt".to_string(), 0 as usize),("Nicolas Minajj - Superbs".to_string(), 0 as usize), vec!["tree".to_string()], 1 as usize);
+        assert_eq!(shared_words(&s1,&s2), truth, "test_shared_words is broken");
+    }
+    #[test]
+    fn test_min_distance() {
+        use crate::file_reading::file_reading::read_songs_csv_to_edges;
+        use crate::graph::graph::Graph;
+        let initial_edges = read_songs_csv_to_edges("Songs_test.csv").unwrap();
+        let g = Graph::create_undirected(initial_edges);
+        let truth = (("Nicolas Minajj - Superball".to_string(), 2 as usize), ("Nicolas Minajj - Superbeat".to_string(), 0 as usize), ["the", "what", "hes", "if"], 1);
+        assert_eq!(g.min_distance().0, truth.0, "test_min_distance is broken");
+        assert_eq!(g.min_distance().1, truth.1, "test_min_distance is broken");
+        assert_eq!(g.min_distance().3, truth.3, "test_min_distance is broken");
+    }
+
+    #[test]
+    fn test_highest_degree_node() {
+        use crate::file_reading::file_reading::read_songs_csv_to_edges;
+        use crate::graph::graph::Graph;
+        let initial_edges = read_songs_csv_to_edges("Songs_test.csv").unwrap();
+        let g = Graph::create_undirected(initial_edges);
+        let truth = ("Nicolas Minajj - Superbass".to_string(), 4 as usize);
+        assert_eq!(g.highest_degree_node(),truth);
+    }
+
+    #[test]
+    fn test_closeness_centrality() {
+        use crate::file_reading::file_reading::read_songs_csv_to_edges;
+        use crate::graph::graph::Graph;
+        let initial_edges = read_songs_csv_to_edges("Songs_test.csv").unwrap();
+        let mut g = Graph::create_undirected(initial_edges);
+        let truth = [6.0/23.0,6.0/22.0,6.0/21.0,6.0/20.0,6.0/19.0];
+        let predict = g.closeness_centrality();
+        assert!(truth.iter().any(|&x| x == predict));
+    }
 }
