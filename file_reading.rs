@@ -1,129 +1,107 @@
 
 pub mod file_reading {
-
-    /*
-    use std::collections::HashSet;
-    use std::fs::File;
-    use std::io::prelude::*;
-
-    
-    pub fn read_file(path: &str) -> Vec<Vec<usize>> {
-        let file = File::open(path).expect("Could not open file");
-        let buf_reader = std::io::BufReader::new(file).lines();
-        let mut n = 0;
-        for line in buf_reader {
-            let line_str = line.expect("Error reading");
-            n = line_str.parse::<usize>().unwrap();
-            break;
-        }
-        let mut graph_list : Vec<Vec<usize>> = vec![vec![];n];
-        let file = File::open(path).expect("Could not open file");
-        let buf_reader = std::io::BufReader::new(file).lines();
-        for (i, line) in (buf_reader).enumerate() {
-            let line_str = line.expect("Error reading");
-            if i == 0 {
-                continue;
-            } else {
-                let v: Vec<&str> = line_str.trim().split(' ').collect();
-                graph_list[v[0].parse::<usize>().unwrap()].push(v[1].parse::<usize>().unwrap());
-            }
-        }
-        return graph_list;
-    }*/
-
-    //use std::io;
-    //use std::process;
     use std::collections::HashSet;
     use std::error::Error;
     use serde::Deserialize;
-    
+    use crate::graph::graph::Edge;
+
     #[derive(Debug, Deserialize)]
     #[derive(Clone)]
     #[allow(non_snake_case)]
-    struct Song {
+    pub struct Song {
         Artist: String,
         Title: String,
         Lyrics: String,
     }
 
-    pub fn read_csv(path: &str) -> Result<Vec<Edge>, Box<dyn Error>> {//Result<(), Box<dyn Error>> {
+    /*struct Bossa_Song {
+        song_name: String,
+        artist: String,
+        song_lyrics: String,
+        song_composition: String,
+        song_lang: String,
+    }*/
+
+    pub fn read_csv_to_edges(path: &str) -> Result<Vec<Edge>, Box<dyn Error>> {//Result<(), Box<dyn Error>> {
         let mut reader = csv::Reader::from_path(path)?;
-        //let headers = reader.headers()?;
-        //println!("{:?}",headers);
-        let mut edges: Vec<Edge> = Vec::new();
+        let mut list_of_edges: Vec<Edge> = Vec::new();
         let mut records: Vec<Song> = Vec::new();
         for result in reader.deserialize() {
-            // Notice that we need to provide a type hint for automatic
-            // deserialization.
             let current_record: Song = result?;
             for record in records.iter(){
                 //check whether record (current Song) shares any lyrics with songs already in lyrics list
-                edges.push(shared_words(current_record.clone(), record));
+                let edge: Edge = shared_words(&current_record, record);
+                if edge.3 > 0 {
+                    list_of_edges.push(edge);
+                }
+                //edges.push(shared_words(&current_record, record));
             }
             
             records.push(current_record);
         }
-        //println!("{:?}", edges);
-        //println!("=======Done=========");
-        return Ok(edges)
+        return Ok(num_shared_words_to_distance(list_of_edges))
     }
 
-
-    type Vertex = String;
-    type SharedLyrics = Vec<String>;
-    type Distance = usize;
-    type Edge = (Vertex, Vertex, SharedLyrics, Distance);
-
-    fn clean_lyrics(mut lyrics: String) -> HashSet<String> {
-        lyrics = lyrics.replace(|c: char| !c.is_alphanumeric() & !(c==' '), "");
-        lyrics = lyrics.to_lowercase();
-        let mut lyrics = lyrics.split(" ").collect::<Vec<&str>>();
-        lyrics.retain(|&x| x != "");
-        lyrics.retain(|&x| x != "urlcopyembedcopy");
-        let lyrics = lyrics.into_iter().map(|x| x.to_string()).collect();
-        return lyrics
-        /*let mut words = lyrics.split(" ").collect::<Vec<&str>>();
-        words.retain(|&x| x != "");
-        words.retain(|&x| x != "urlcopyembedcopy");
-        let unique: HashSet<_> = words.into_iter().collect();
-        return unique*/
+    fn num_shared_words_to_distance(list_of_edges: Vec<Edge>) -> Vec<Edge> {
+        //Songs with the most shared lyrics have the smallest distance
+        //Songs with the least shared lyrics have the largest distance
+        let mut fixed_edges: Vec<Edge> = Vec::new();
+        let max = max_shared_words(&list_of_edges).3;
+        for (s1, s2, shared, distance) in list_of_edges.iter() {
+            fixed_edges.push((s1.clone(),s2.clone(),shared.clone(),max-distance+1))
+        }
+        return fixed_edges
     }
 
-    fn shared_to_edge(song1: Song, song2: &Song, shared: Vec<String>) -> Edge {
-        //let shared = &shared.iter().map(|f| f.to_string()).collect::<Vec<_>>();
-        let artist_title1 = format!("{}, {}", song1.Artist, song1.Title);
-        let artist_title2 = format!("{}, {}", song2.Artist, song2.Title);
-        return (artist_title1, artist_title2, shared.clone(), shared.len())
+    fn max_shared_words(list_of_edges: &Vec<Edge>) -> Edge { //Finds Edge with greatest number of shared_lyrics before change in distance
+        let mut best_edge: Edge = list_of_edges[0].clone();
+        for edge in list_of_edges.iter() {
+            if edge.3 > best_edge.3 {
+                best_edge = edge.clone();
+            }
+        }
+        return best_edge
+    }
+
+    pub fn min_distance(list_of_edges: &Vec<Edge>) -> Edge { //Finds Edge with greatest number of shared_lyrics after change in distance
+        let mut best_edge: Edge = list_of_edges[0].clone();
+        for edge in list_of_edges.iter() {
+            if edge.3 < best_edge.3 {
+                best_edge = edge.clone();
+            }
+        }
+        return best_edge
+    }
+
+    fn clean_lyrics(lyrics: &String) -> HashSet<String> {
+        let temp = lyrics.replace(|c: char| !c.is_alphanumeric() & !(c==' '), "");
+        let temp = temp.to_lowercase();
+        let mut temp = temp.split(" ").collect::<Vec<&str>>();
+        temp.retain(|&x| x != "");
+        temp.retain(|&x| x != "urlcopyembedcopy");
+        temp.retain(|&x| x != "\\u{200b}");
+        let temp = temp.into_iter().map(|x| x.to_string()).collect();
+        return temp
+    }
+
+    fn shared_to_edge(song1: &Song, song2: &Song, shared: Vec<String>) -> Edge {
+        let artist_title1 = format!("{} - {}", song1.Artist.replace("\u{200b}", ""), song1.Title.replace("\u{200b}", ""));
+        let artist_title2 = format!("{} - {}", song2.Artist.replace("\u{200b}", ""), song2.Title.replace("\u{200b}", ""));
+        let len = calculate_length(&shared);
+        return (artist_title1, artist_title2, shared, len)
+    }
+
+    fn calculate_length(shared: &Vec<String>) -> usize {
+        return shared.len()
     }
 
 
     //helper function for read_csv
-    fn shared_words(song1: Song, song2: &Song) -> Edge {
-    /*pub fn shared_words(mut lyrics1: String, mut lyrics2: String) -> Vec<Edge> {
-        lyrics1 = lyrics1.replace(|c: char| !c.is_alphanumeric() & !(c==' '), "");
-        lyrics1 = lyrics1.to_lowercase();
-        let mut words1 = lyrics1.split(" ").collect::<Vec<&str>>();
-        words1.retain(|&x| x != "");
-        words1.retain(|&x| x != "urlcopyembedcopy");
-        let unique_1: HashSet<_> = words1.into_iter().collect();
-
-        lyrics2 = lyrics2.replace(|c: char| !c.is_alphanumeric() & !(c==' '), "");
-        lyrics2 = lyrics2.to_lowercase();
-        let mut words2 = lyrics2.split(" ").collect::<Vec<&str>>();
-        words2.retain(|&x| x != "");
-        words2.retain(|&x| x != "urlcopyembedcopy");
-        let unique_2: HashSet<_> = words2.into_iter().collect();
-        */
-        let unique1 = clean_lyrics(song1.Lyrics.clone());
-        let unique2 = clean_lyrics(song2.Lyrics.clone());
+    fn shared_words(song1: &Song, song2: &Song) -> Edge {
+        let unique1 = clean_lyrics(&song1.Lyrics);
+        let unique2 = clean_lyrics(&song2.Lyrics);
         let shared = unique1.intersection(&unique2).into_iter().map(|f| f.to_string()).collect::<Vec<String>>();
-        //let shared = shared.iter().map(|f| f.to_string()).collect::<Vec<_>>();
-        
-        //println!("\n===========\n{:?}", shared);
-
         return shared_to_edge(song1, song2, shared)
-
-        
     }
 
 

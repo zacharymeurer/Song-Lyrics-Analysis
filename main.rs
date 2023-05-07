@@ -1,9 +1,11 @@
 mod file_reading;
+mod graph;
 //use std::error::Error;
 use std::time;
 //use rand::{seq::IteratorRandom, thread_rng};
 fn main() {
-    use file_reading::file_reading::read_csv;
+    use file_reading::file_reading::read_csv_to_edges;
+    use graph::graph::Graph;
     //use file_reading::file_reading::shared_words;
     /*let lyrics1 = "Vintage tee, brand new phone
     High heels on cobblestones
@@ -137,14 +139,41 @@ fn main() {
     */
     //shared_words(lyrics1.to_string(), lyrics2.to_string());
     let now = time::Instant::now();
-    if let Err(e) = read_csv("Songs.csv") {
+    /*if let Err(e) = read_csv("Songs.csv") {
         eprintln!("{}",e);
+    }*/
+    //let a = read_csv_to_edges("Songs.csv").unwrap();
+    let a = read_csv_to_edges("Songs_test.csv").unwrap();
+    println!("{:?}",a.len()); // max edges = n(n-1)/2
+    let mut g = Graph::create_undirected(a);
+    println!("{:?}\n",g);
+    println!("{:?}\n",file_reading::file_reading::min_distance(&g.outedges));
+    println!("{:?}\n",g.highest_degree_node());
+
+    let mut min_cost = 0;
+    for (u,v,_,x) in g.kruskal_mst(){
+        min_cost += x;
+        println!("{} -- {} == {}", u, v, x)
     }
+    println!("Spanning Tree Cost {}", min_cost);
+
+    //println!("{:?}",a);
     let elapsed_time = now.elapsed();
     println!("Running slow_function() took {} seconds.", elapsed_time.as_secs());
     println!("test");
     //let p = read_csv("Songs.csv");
-    println!("test2");
+    /*
+    struct Test {
+        x: u32,
+        y: String,
+    }
+    let mut point = Test{x:3,y:"testee".to_string()};
+    println!("{}",point.x);
+    point.x = 5;
+    println!("{}",point.x);
+    println!("{}",point.y);
+    point.y = "testee_swtich".to_string();
+    println!("{}",point.y);*/
     /*println!("Hello, world!");
     //use readCSV::level_1::tester;
     //tester();
@@ -155,4 +184,7 @@ fn main() {
     let sample = v.iter().choose_multiple(&mut rng, 2);
 
     println!("{:?}", sample);*/
+    use std::cmp;
+    println!("{:?}",cmp::max_by(2,5, |x, y| x.cmp(&y)));
+    println!("{:?}",2.cmp(&5));
 }
